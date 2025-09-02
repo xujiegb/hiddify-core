@@ -64,6 +64,20 @@ windows-amd64:
 	make webui
 	
 
+# ===== 新增：Windows ARM64 交叉编译 =====
+windows-arm64:
+	curl http://localhost:18020/exit || echo "exited"
+	mkdir -p $(BINDIR)/arm64
+	env GOOS=windows GOARCH=arm64 CC=aarch64-w64-mingw32-gcc $(GOBUILDLIB) -o $(BINDIR)/arm64/$(LIBNAME).dll ./custom
+	go install -mod=readonly github.com/akavel/rsrc@latest ||echo "rsrc error in installation"
+	go run ./cli tunnel exit
+	cp $(BINDIR)/arm64/$(LIBNAME).dll ./$(LIBNAME).dll
+	$$(go env GOPATH)/bin/rsrc -ico ./assets/hiddify-cli.ico -o ./cli/bydll/cli.syso ||echo "rsrc error in syso"
+	env GOOS=windows GOARCH=arm64 CC=aarch64-w64-mingw32-gcc CGO_LDFLAGS="$(LIBNAME).dll" $(GOBUILDSRV) -o $(BINDIR)/arm64/$(CLINAME).exe ./cli/bydll
+	rm ./$(LIBNAME).dll
+	make webui
+# =====================================
+
 linux-amd64:
 	mkdir -p $(BINDIR)/lib
 	env GOOS=linux GOARCH=amd64 $(GOBUILDLIB) -o $(BINDIR)/lib/$(LIBNAME).so ./custom
@@ -102,6 +116,3 @@ clean:
 
 release: # Create a new tag for release.	
 	@bash -c '.github/change_version.sh'
-	
-
-
